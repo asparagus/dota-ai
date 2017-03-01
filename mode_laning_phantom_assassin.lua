@@ -130,6 +130,26 @@ function HoldLane()
         end
     end
 
+    -- Move closer to dying creeps
+    for _, creep in pairs ( enemyCreeps ) do
+        local creepHealth = creep:GetHealth();
+        if ( creep:GetHealth() < 150 ) then
+            npcBot:Action_MoveToLocation( creep:GetLocation() );
+            print("Moving closer to last hit");
+            return;
+        end
+    end
+
+    -- Move closer to deny creeps
+    for _, creep in pairs ( alliedCreeps ) do
+        local creepHealth = creep:GetHealth();
+        if ( creep:GetHealth() < 150 ) then
+            npcBot:Action_MoveToLocation( creep:GetLocation() );
+            print("Moving closer to deny");
+            return;
+        end
+    end
+
     -- If nothing has been done, check if we can push or pull the lane --
     if ( npcBot:WasRecentlyDamagedByCreep( 1 ) or npcBot:WasRecentlyDamagedByTower( 1 ) ) then
         TakeOffAggro();

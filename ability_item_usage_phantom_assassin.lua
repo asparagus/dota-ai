@@ -68,12 +68,6 @@ function ChooseTargetInTeamfight( nearbyEnemies )
 end
 ----------------------------------------------------------------------------------------------------
 
-
-daggerMultiplier = { 0.25, 0.25, 0.40, 0.40, 0.55, 0.55 };
-for i = 7, 25 do
-    daggerMultiplier[i] = 0.70;
-end
-
 function ConsiderStiflingDagger()
 
     local npcBot = GetBot();
@@ -87,10 +81,9 @@ function ConsiderStiflingDagger()
     local autoAttackDamage = npcBot:GetAttackDamage();
     local autoAttackRange = npcBot:GetAttackRange();
     local level = npcBot:GetLevel();
-    local baseDamage = 65;
 
     local nCastRange = abilityDagger:GetCastRange();
-    local nDamage = baseDamage + daggerMultiplier[level] * autoAttackDamage;
+    local nDamage = abilityDagger:GetAbilityDamage();
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
 
     -- If a mode has set a target, and we can kill them, do it
@@ -105,13 +98,14 @@ function ConsiderStiflingDagger()
     end
 
     if ( npcBot:GetActiveMode() == BOT_MODE_LANING ) then
+        -- Check for creeps to last hit
         local currentMana = npcBot:GetMana();
         if ( currentMana > 100 ) then
             local nearbyCreeps = npcBot:GetNearbyCreeps( nCastRange + 200, true );
             local nearbyEnemies = npcBot:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
             for _, creep in pairs( nearbyCreeps ) do
                 local creepHealth = creep:GetHealth();
-                -- Check if the target would die with a dagger --
+                -- Check if the target would die with a dagger
                 if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
                     local travelDistance = math.max( GetUnitToUnitDistance( npcBot, creep ) - autoAttackRange, 0 );
                     for _,npcEnemy in pairs ( nearbyEnemies ) do
@@ -126,7 +120,7 @@ function ConsiderStiflingDagger()
         end
 
         -- Harass --
-        local enemiesToHarass = npcBot:GetNearbyHeroes( nCastRange + 200, true, BOT_MODE_NONE );
+        local enemiesToHarass = npcBot:GetNearbyHeroes( nCastRange + 400, true, BOT_MODE_NONE );
         local weakestHero = nil;
         local weakestHeroHealth = 999999;
         for _,npcTarget in pairs( enemiesToHarass ) do
@@ -145,11 +139,6 @@ function ConsiderStiflingDagger()
             if ( currentMana >= 150 or ( currentMana / npcBot:GetMaxMana() >= currentHealth / npcBot:GetMaxHealth() ) ) then
                 print("Using dagger to harass");
                 return BOT_ACTION_DESIRE_MODERATE, weakestHero;
-            end
-
-            if ( ShouldTrade(weakestHero) ) then
-                print("Trading with enemy hero");
-                npcBot:SetTarget( weakestHero );
             end
         end
     end
@@ -222,14 +211,11 @@ function ConsiderPhantomStrike()
     local nDamage = npcBot:GetAttackDamage() * 3;
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
 
-    -- If a mode has set a target, and we can kill them, do it
+    -- If a mode has set a target go on them
     local npcTarget = npcBot:GetTarget();
     if ( npcTarget ~= nil and CanCastPhantomStrikeOnTarget( npcTarget ) )
     then
-        if (npcTarget:GetActualIncomingDamage( nDamage, eDamageType ) > npcTarget:GetHealth() and GetUnitToUnitDistance( npcTarget, npcBot ) < ( nCastRange + 200 ) )
-        then
-            return BOT_ACTION_DESIRE_HIGH, npcTarget
-        end
+        return BOT_ACTION_DESIRE_HIGH, npcTarget;
     end
 
     -- If we're in a teamfight, use it on the most valuable fragile target
