@@ -44,29 +44,6 @@ function CanCastPhantomStrikeOnTarget( npcTarget )
 end
 
 ----------------------------------------------------------------------------------------------------
-function CanKillTarget( npcTarget )
-    local npcBot = GetBot();
-    damageOutput = npcBot:GetEstimatedDamageToTarget( true, npcTarget, 2 );
-    return damageOutput >= npcTarget:GetHealth()
-end
-
-function ChooseTargetInTeamfight( nearbyEnemies )
-    local npcBot = GetBot();
-    local target = nil;
-    local targetValue = 0;
-    for _, npcEnemy in pairs( nearbyEnemies ) do
-        local value = npcEnemy:GetEstimatedDamageToTarget( true, npcBot, 3.0, DAMAGE_TYPE_ALL );
-        local relativeHealth = npcEnemy:GetHealth() / npcBot:GetEstimatedDamageToTarget( true, npcEnemy, 3.0, DAMAGE_TYPE_ALL );
-
-        if ( value > targetValue ) then
-            targetValue = value;
-            target = npcEnemy;
-        end
-    end
-
-    return target;
-end
-----------------------------------------------------------------------------------------------------
 
 function ConsiderStiflingDagger()
 
@@ -100,7 +77,7 @@ function ConsiderStiflingDagger()
     if ( npcBot:GetActiveMode() == BOT_MODE_LANING ) then
         -- Check for creeps to last hit
         local currentMana = npcBot:GetMana();
-        if ( currentMana > 100 ) then
+        if ( currentMana > 150 ) then
             local nearbyCreeps = npcBot:GetNearbyCreeps( nCastRange + 200, true );
             local nearbyEnemies = npcBot:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
             for _, creep in pairs( nearbyCreeps ) do
@@ -110,7 +87,7 @@ function ConsiderStiflingDagger()
                     local travelDistance = math.max( GetUnitToUnitDistance( npcBot, creep ) - autoAttackRange, 0 );
                     for _,npcEnemy in pairs ( nearbyEnemies ) do
                         local enemyTravelDistance = math.max( GetUnitToUnitDistance( npcEnemy, creep ) - npcEnemy:GetAttackRange(), 0 );
-                        if ( enemyTravelDistance < travelDistance or ( enemyTravelDistance == 0 and npcEnemy:GetAttackDamage() > autoAttackDamage ) ) then
+                        if ( ( enemyTravelDistance < travelDistance or enemyTravelDistance == 0 ) and npcEnemy:GetAttackDamage() > autoAttackDamage ) then
                             print("Using dagger to avoid a deny");
                             return BOT_ACTION_DESIRE_MODERATE, creep;
                         end
@@ -152,7 +129,7 @@ function ConsiderStiflingDagger()
         local nMostDangerousDamage = 0;
 
         local nearbyEnemyHeroes = npcBot:GetNearbyHeroes( nCastRange, true, BOT_MODE_NONE );
-        local target = ChooseTargetInTeamfight(nearbyEnemyHeroes);
+        local target = ChooseTarget(nearbyEnemyHeroes);
 
         if ( target ~= nil ) then
             npcBot:SetTarget( target );
@@ -227,7 +204,7 @@ function ConsiderPhantomStrike()
         local nMostDangerousDamage = 0;
 
         local nearbyEnemyHeroes = npcBot:GetNearbyHeroes( nCastRange, true, BOT_MODE_NONE );
-        local target = ChooseTargetInTeamfight(nearbyEnemyHeroes);
+        local target = ChooseTarget(nearbyEnemyHeroes);
 
         if ( target ~= nil )
         then

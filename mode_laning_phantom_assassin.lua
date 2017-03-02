@@ -35,7 +35,7 @@ function Think()
                 print("Pulling the lane");
             end
             mode = PULLING;
-        elseif ( delta < -400 ) then
+        elseif ( delta < -600 ) then
             if ( MODE ~= PUSHING ) then
                 print("Pushing the lane");
             end
@@ -53,7 +53,6 @@ end
 
 
 function CreepBlock()
-    print("Creep blocking");
     local npcBot = GetBot();
     local assignedLane = npcBot:GetAssignedLane();
     local team = npcBot:GetTeam();
@@ -85,7 +84,7 @@ function HoldLane()
 
     local assignedLane = npcBot:GetAssignedLane();
     local team = npcBot:GetTeam();
-    local laneFront = GetLaneFrontLocation( team, assignedLane, - 200 );
+    local laneFront = GetLaneFrontLocation( team, assignedLane, - 500 );
 
     local alliedCreeps = npcBot:GetNearbyCreeps( nAcqRange, false );
     local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
@@ -107,6 +106,26 @@ function HoldLane()
             print("Denying");
             return;
         end
+    end
+
+    local location = npcBot:GetLocation();
+    local enemyHeroes = npcBot:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
+    local delta = RandomVector( 0 );
+    for _, hero in pairs( enemyHeroes ) do
+        local heroRange = hero:GetAttackRange();
+        local heroLocation = hero:GetLocation();
+        local currentDistance = GetUnitToUnitDistance( npcBot, hero );
+        if ( currentDistance <= heroRange + 150 ) then
+            -- We're in attack range of the enemy, retreat.
+            print('Backing out of attack range');
+            delta = delta - ( heroLocation - location ) / currentDistance * heroRange;
+        end
+    end
+
+    -- Take off aggro
+    if ( npcBot:WasRecentlyDamagedByCreep( 1 ) or npcBot:WasRecentlyDamagedByTower( 1 ) ) then
+        TakeOffAggro();
+        return;
     end
 
     if ( MODE == PULLING and #alliedCreeps >= #enemyCreeps ) then
@@ -150,10 +169,9 @@ function HoldLane()
         end
     end
 
-    -- If nothing has been done, check if we can push or pull the lane --
-    if ( npcBot:WasRecentlyDamagedByCreep( 1 ) or npcBot:WasRecentlyDamagedByTower( 1 ) ) then
-        TakeOffAggro();
-        npcBot:Action_MoveToLocation(laneFront);
+    if ( #enemyHeroes > 0 ) then
+        npcBot:Action_MoveToLocation( location + delta );
+        return;
     end
 
     print('Moving to lane front');
@@ -166,6 +184,37 @@ function TakeOffAggro()
     print("Taking off aggro");
     local npcBot = GetBot();
     local team = npcBot:GetTeam();
+    local closestUnit = nil;
+    local closestUnitDistance = 1600;
+    local nearbyAlliedCreeps = npcBot:GetNearbyCreeps( 1600, false );
+    local nearbyAlliedHeroes = npcBot:GetNearbyHeroes( 1600, false, BOT_MODE_NONE );
+    if ( #nearbyAlliedCreeps > 0 ) then
+        local closestCreep = nearbyAlliedCreeps[1];
+        local distance = GetUnitToUnitDistance( npcBot, closestCreep );
+        if ( distance < closestUnitDistance ) then
+            closestUnitDistance = distance;
+            closestUnit = closestCreep;
+        end
+    end
+
+    if ( #nearbyAlliedHeroes > 0 ) then
+        local closestHero = nearbyAlliedHeroes[1];
+        local distance = GetUnitToUnitDistance( npcBot, closestHero );
+        if ( distance < closestUnitDistance ) then
+            closestUnitDistance = distance;
+            closestUnit = closestHero;
+        end
+    end
+
+    if ( closestUnit ) then
+        npcBot:ActionPush_AttackUnit( closestUnit, true );
+    end
+
+    local team = npcBot:GetTeam();
     local ancient = GetAncient(team);
-    npcBot:Action_AttackUnit(ancient, true);
+    local ancientDistance = GetUnitToUnitDistance( npcBot, ancient );
+    local location = npcBot:GetLocation();
+    -- Move towards the ancient
+    local delta = ( ancient:GetLocation() - location ) / ancientDistance * 200;
+    npcBot:ActionQueue_MoveToLocation( location + delta );
 end
