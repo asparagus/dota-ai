@@ -10,6 +10,8 @@ SHRINES = {
 
 function GetDesire()
     local npcBot = GetBot();
+    local team = npcBot:GetTeam();
+
     local health = npcBot:GetHealth();
     local maxHealth = npcBot:GetMaxHealth();
     local fraction = health / maxHealth;
@@ -20,22 +22,54 @@ function GetDesire()
         return BOT_ACTION_DESIRE_HIGH;
     elseif ( fraction <= 0.2 ) then
         return BOT_ACTION_DESIRE_VERY_HIGH;
-    elseif ( fraction <= 0.1 ) then
-        return
+    end
+
+    if ( IsHealing() ) then
+        return BOT_ACTION_DESIRE_HIGH;
     end
 end
 
+function IsHealing()
+    local npcBot = GetBot();
+    local team = npcBot:GetTeam();
+
+    local health = npcBot:GetHealth();
+    local maxHealth = npcBot:GetMaxHealth();
+    local mana = npcBot:GetMana();
+    local maxMana = npcBot:GetMaxMana();
+
+    if ( health < maxHealth or mana < maxMana ) then
+        if ( npcBot:DistanceFromFountain() == 0 ) then
+            print('Healing on fountain');
+            return true;
+        end
+
+        local nearbyShrines = npcBot:GetNearbyShrines( 1600, false );
+        if ( #nearbyShrines > 0 ) then
+            if ( IsShrineHealing( nearbyShrines[1] ) ) then
+                print('Healing on shrine');
+                return true;
+            end
+        end
+    end
+
+    return false;
+end
+
 function Think()
+    if ( IsHealing() ) then
+        -- Just stay there
+        return;
+    end
+
     local npcBot = GetBot();
     local closestShrineDistance = math.huge;
     local closestActiveShrine = nil;
     local team = npcBot:GetTeam();
 
-    print('Checking shrine cds');
     for _, n_shrine in pairs( SHRINES ) do
         local shrine = GetShrine( team, n_shrine );
         local shrineCd = GetShrineCooldown( shrine );
-        print(shrineCd);
         if ( GetShrineCooldown( shrine ) == 0 ) then
             local distance = GetUnitToUnitDistance( npcBot, shrine );
             if ( distance < closestShrineDistance ) then

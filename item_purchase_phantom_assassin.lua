@@ -1,13 +1,13 @@
 require( GetScriptDirectory().."/item_purchase_generic" )
 
 local tableItemsToBuy = {
-    "item_tango",
     "item_stout_shield",
+    "item_slippers",
+    "item_slippers",
     "item_branches",
     "item_branches",
-    "item_bottle",
-    "item_boots",
     "item_blight_stone",
+    "item_boots",
     "item_blades_of_attack",
     "item_blades_of_attack",
     "item_circlet",

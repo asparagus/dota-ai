@@ -1,4 +1,4 @@
-
+require( GetScriptDirectory().."/utils/combat" )
 ----------------------------------------------------------------------------------------------------
 
 castDaggerDesire = 0;
@@ -45,6 +45,11 @@ end
 
 ----------------------------------------------------------------------------------------------------
 
+daggerMultiplier = { 0.25, 0.25, 0.40, 0.40, 0.55, 0.55 };
+for lvl = 7, 25 do
+    daggerMultiplier[lvl] = 0.70;
+end
+
 function ConsiderStiflingDagger()
 
     local npcBot = GetBot();
@@ -60,7 +65,9 @@ function ConsiderStiflingDagger()
     local level = npcBot:GetLevel();
 
     local nCastRange = abilityDagger:GetCastRange();
-    local nDamage = abilityDagger:GetAbilityDamage();
+    local baseDamage = 65;
+
+    local nDamage = baseDamage + daggerMultiplier[level] * autoAttackDamage;
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
 
     -- If a mode has set a target, and we can kill them, do it
@@ -195,27 +202,10 @@ function ConsiderPhantomStrike()
         return BOT_ACTION_DESIRE_HIGH, npcTarget;
     end
 
-    -- If we're in a teamfight, use it on the most valuable fragile target
-    local tableNearbyAttackingAlliedHeroes = npcBot:GetNearbyHeroes( 1000, false, BOT_MODE_ATTACK );
-    if ( #tableNearbyAttackingAlliedHeroes >= 2 )
-    then
-
-        local npcMostDangerousEnemy = nil;
-        local nMostDangerousDamage = 0;
-
-        local nearbyEnemyHeroes = npcBot:GetNearbyHeroes( nCastRange, true, BOT_MODE_NONE );
-        local target = ChooseTarget(nearbyEnemyHeroes);
-
-        if ( target ~= nil )
-        then
-            npcBot:SetTarget(target);
-            return BOT_ACTION_DESIRE_HIGH, target;
-        end
-    end
-
     -- If we're seriously retreating, try to run to a teammate
     if ( npcBot:GetActiveMode() == BOT_MODE_RETREAT and npcBot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH )
     then
+        local distanceToFountain = npcBot:DistanceFromFountain();
         -- local tableNearbyEnemyHeroes = npcBot:GetNearbyHeroes( nCastRange + nRadius + 200, true, BOT_MODE_NONE );
         -- for _,npcEnemy in pairs( tableNearbyEnemyHeroes )
         -- do

@@ -1,3 +1,5 @@
+require( GetScriptDirectory().."/utils/combat" )
+----------------------------------------------------------------------------------------------------
 MODE = nil;
 NONE = 0;
 PULLING = 1;
@@ -6,22 +8,19 @@ PUSHING = 2;
 function Think()
     local npcBot = GetBot();
     local assignedLane = npcBot:GetAssignedLane();
-    local team = npcBot:GetTeam();
-    local opposingTeam = nil;
-    if ( team == TEAM_RADIANT ) then
-        opposingTeam = TEAM_DIRE;
-    else
-        opposingTeam = TEAM_RADIANT;
-    end
 
-    local time = DotaTime();
-    if ( time < 0 ) then
-        local midLanePosition = GetLocationAlongLane( assignedLane, 0.30 );
-        npcBot:Action_MoveToLocation( midLanePosition );
-
-    elseif ( time < 18 ) then
+    if ( ConsiderInitialPosition() > BOT_ACTION_DESIRE_NONE ) then
+        npcBot:Action_MoveToLocation( GetLocationAlongLane( assignedLane, 0.30 ) );
+    elseif ( ConsiderCreepBlock() > BOT_ACTION_DESIRE_NONE ) then
         CreepBlock();
     else
+        local team = npcBot:GetTeam();
+        local opposingTeam = nil;
+        if ( team == TEAM_RADIANT ) then
+            opposingTeam = TEAM_DIRE;
+        else
+            opposingTeam = TEAM_RADIANT;
+        end
         local laneFront = GetLaneFrontLocation( team, assignedLane, 0 );
         local alliedTower = GetTower( team, TOWER_MID_1 );
         local enemyTower = GetTower( opposingTeam, TOWER_MID_1 );
@@ -51,6 +50,24 @@ function Think()
     end
 end
 
+function ConsiderInitialPosition()
+    local time = DotaTime();
+    if ( time < 0 ) then
+        return BOT_ACTION_DESIRE_HIGH;
+    else
+        return BOT_ACTION_DESIRE_NONE;
+    end
+end
+
+function ConsiderCreepBlock()
+    local time = DotaTime();
+    if ( 0 < time and time < 18 ) then
+        return BOT_ACTION_DESIRE_HIGH;
+    else
+        return BOT_ACTION_DESIRE_NONE;
+    end
+end
+
 
 function CreepBlock()
     local npcBot = GetBot();
@@ -58,12 +75,17 @@ function CreepBlock()
     local team = npcBot:GetTeam();
 
     local laneCreeps = npcBot:GetNearbyLaneCreeps( 1600, false );
+    local ancient = GetAncient(team);
+    local ancientDistance = GetUnitToUnitDistance( npcBot, ancient );
     local firstCreep = nil;
     local firstCreepProgress = 0;
+
+    -- Stay ahead of creeps
     for _, creep in pairs( laneCreeps ) do
-        local creepLocation = creep:GetLocation();
-        local creepProgress = GetAmountAlongLane( assignedLane, creepLocation )['amount'];
-        if ( creepProgress > firstCreepProgress ) then
+        local creepProgress = GetUnitToUnitDistance( creep, ancient );
+
+        -- If any creep has already passed us, give up on him
+        if ( creepProgress <= ancientDistance and creepProgress > firstCreepProgress ) then
             firstCreepProgress = creepProgress;
             firstCreep = creep;
         end
@@ -124,7 +146,7 @@ function HoldLane()
 
     -- Take off aggro
     if ( npcBot:WasRecentlyDamagedByCreep( 1 ) or npcBot:WasRecentlyDamagedByTower( 1 ) ) then
-        TakeOffAggro();
+        RemoveAggro();
         return;
     end
 
@@ -178,43 +200,4 @@ function HoldLane()
     if ( GetUnitToLocationDistance( npcBot, laneFront ) > 200 ) then
         npcBot:Action_MoveToLocation(laneFront);
     end
-end
-
-function TakeOffAggro()
-    print("Taking off aggro");
-    local npcBot = GetBot();
-    local team = npcBot:GetTeam();
-    local closestUnit = nil;
-    local closestUnitDistance = 1600;
-    local nearbyAlliedCreeps = npcBot:GetNearbyCreeps( 1600, false );
-    local nearbyAlliedHeroes = npcBot:GetNearbyHeroes( 1600, false, BOT_MODE_NONE );
-    if ( #nearbyAlliedCreeps > 0 ) then
-        local closestCreep = nearbyAlliedCreeps[1];
-        local distance = GetUnitToUnitDistance( npcBot, closestCreep );
-        if ( distance < closestUnitDistance ) then
-            closestUnitDistance = distance;
-            closestUnit = closestCreep;
-        end
-    end
-
-    if ( #nearbyAlliedHeroes > 0 ) then
-        local closestHero = nearbyAlliedHeroes[1];
-        local distance = GetUnitToUnitDistance( npcBot, closestHero );
-        if ( distance < closestUnitDistance ) then
-            closestUnitDistance = distance;
-            closestUnit = closestHero;
-        end
-    end
-
-    if ( closestUnit ) then
-        npcBot:ActionPush_AttackUnit( closestUnit, true );
-    end
-
-    local team = npcBot:GetTeam();
-    local ancient = GetAncient(team);
-    local ancientDistance = GetUnitToUnitDistance( npcBot, ancient );
-    local location = npcBot:GetLocation();
-    -- Move towards the ancient
-    local delta = ( ancient:GetLocation() - location ) / ancientDistance * 200;
-    npcBot:ActionQueue_MoveToLocation( location + delta );
 end
