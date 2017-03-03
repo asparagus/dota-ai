@@ -17,8 +17,8 @@ The laning phase is the one I decided to tackle first, since longer games would 
 - Bots are good at last hitting and denying out-of-the-box
 - Coded a function to evaluate whether the bot should trade hits with the enemy in order to take them out of the lane
 - Currently using _Stifling Dagger_ to harass and avoid denies
-- The bot has no regard about its safety and will stand in place while taking hits
-- The bot will not use shrines or try to pick up runes
+- The bot has little regard about its safety and might stand in place while taking hits
+- The bot will back off to the nearest shrine when low in hp, but every bot uses it in a selfish way
 - The bot seems to use healing items randomly
 
 ---
