@@ -12,6 +12,8 @@ local tableItemsToBuy = {
     "item_blades_of_attack",
     "item_circlet",
     "item_magic_stick",
+    "item_wraith_band",
+    "item_ring_of_basilius",
     "item_mithril_hammer",
     "item_mithril_hammer",
     "item_lesser_crit",

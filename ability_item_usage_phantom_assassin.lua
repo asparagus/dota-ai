@@ -76,7 +76,6 @@ function ConsiderStiflingDagger()
     then
         if (npcTarget:GetActualIncomingDamage( nDamage, eDamageType ) > npcTarget:GetHealth() and GetUnitToUnitDistance( npcTarget, npcBot ) < ( nCastRange + 200 ) )
         then
-            print("Using dagger on target");
             return BOT_ACTION_DESIRE_HIGH, npcTarget
         end
     end
@@ -95,7 +94,6 @@ function ConsiderStiflingDagger()
                     for _,npcEnemy in pairs ( nearbyEnemies ) do
                         local enemyTravelDistance = math.max( GetUnitToUnitDistance( npcEnemy, creep ) - npcEnemy:GetAttackRange(), 0 );
                         if ( ( enemyTravelDistance < travelDistance or enemyTravelDistance == 0 ) and npcEnemy:GetAttackDamage() > autoAttackDamage ) then
-                            print("Using dagger to avoid a deny");
                             return BOT_ACTION_DESIRE_MODERATE, creep;
                         end
                     end
@@ -117,11 +115,11 @@ function ConsiderStiflingDagger()
             end
         end
 
+        -- Harass
         if ( weakestHero ~= nil ) then
             local currentMana = npcBot:GetMana();
             local currentHealth = npcBot:GetHealth();
             if ( currentMana >= 150 or ( currentMana / npcBot:GetMaxMana() >= currentHealth / npcBot:GetMaxHealth() ) ) then
-                print("Using dagger to harass");
                 return BOT_ACTION_DESIRE_MODERATE, weakestHero;
             end
         end
@@ -140,7 +138,6 @@ function ConsiderStiflingDagger()
 
         if ( target ~= nil ) then
             npcBot:SetTarget( target );
-            print("Using dagger on chosen teamfight hero");
             return BOT_ACTION_DESIRE_HIGH, target;
         end
     end
@@ -153,7 +150,6 @@ function ConsiderStiflingDagger()
         do
             if ( npcBot:WasRecentlyDamagedByHero( npcEnemy, 2.0 ) ) then
                 if ( CanCastStiflingDaggerOnTarget( npcEnemy ) ) then
-                    print("Using dagger to slow an attacker");
                     return BOT_ACTION_DESIRE_MODERATE, npcEnemy;
                 end
             end
@@ -171,7 +167,6 @@ function ConsiderStiflingDagger()
 
         if ( npcTarget ~= nil ) then
             if ( CanCastStiflingDaggerOnTarget( npcTarget ) ) then
-                print("Using dagger to chase");
                 return BOT_ACTION_DESIRE_HIGH, npcTarget;
             end
         end

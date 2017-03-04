@@ -1,3 +1,5 @@
+require( GetScriptDirectory().."/utils/movement" )
+----------------------------------------------------------------------------------------------------
 SHRINES = {
     SHRINE_BASE_1,
     SHRINE_BASE_2,
@@ -40,14 +42,12 @@ function IsHealing()
 
     if ( health < maxHealth or mana < maxMana ) then
         if ( npcBot:DistanceFromFountain() == 0 ) then
-            print('Healing on fountain');
             return true;
         end
 
         local nearbyShrines = npcBot:GetNearbyShrines( 1600, false );
         if ( #nearbyShrines > 0 ) then
             if ( IsShrineHealing( nearbyShrines[1] ) ) then
-                print('Healing on shrine');
                 return true;
             end
         end
@@ -82,11 +82,9 @@ function Think()
     local fountainDistance = npcBot:DistanceFromFountain();
 
     if ( closestShrineDistance < fountainDistance ) then
-        print('Using shrine');
         npcBot:Action_UseShrine( closestActiveShrine );
     else
         local home = GetShopLocation( team, SHOP_HOME );
-        print('Walking to fountain');
         npcBot:Action_MoveToLocation( home );
     end
 end

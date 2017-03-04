@@ -12,21 +12,21 @@ function NearbyEnemyDamage( hero, location, interval )
 
     -- Sum the damage for all sources
     local totalDamage = 0;
-    if ( #creeps > 0 ) then
+    if ( creeps ~= nil and #creeps > 0 ) then
         for _, creep in pairs( creeps ) do
             if ( GetUnitToLocationDistance( creep, location ) <= CREEP_AGGRO_RANGE ) then
                 totalDamage = totalDamage + creep:GetEstimatedDamageToTarget( true, hero, interval, DAMAGE_TYPE_ALL);
             end
         end
     end
-    if ( #heroes > 0 ) then
+    if ( heroes ~= nil and #heroes > 0 ) then
         for _, other_hero in pairs( heroes ) do
             if ( GetUnitToLocationDistance( other_hero, location ) <= HERO_AGGRO_RANGE ) then
                 totalDamage = totalDamage + other_hero:GetEstimatedDamageToTarget( true, hero, interval, DAMAGE_TYPE_ALL );
             end
         end
     end
-    if ( #towers > 0 ) then
+    if ( towers ~= nil and #towers > 0 ) then
         for _, tower in pairs( towers ) do
             if ( GetUnitToLocationDistance( tower, location ) <= TOWER_AGGRO_RANGE ) then
                 totalDamage = totalDamage + tower:GetEstimatedDamageToTarget( true, hero, interval, DAMAGE_TYPE_ALL );
@@ -119,5 +119,30 @@ function TakeOffAggro()
         npcBot:ActionQueue_MoveToLocation( location + delta );
     else
         npcBot:ActionQueue_MoveToLocation( location + delta );
+    end
+end
+
+function WasRecentlyDamaged( unit, interval )
+    return (unit:WasRecentlyDamagedByAnyHero( interval ) or
+            unit:WasRecentlyDamagedByCreep( interval ) or
+            unit:WasRecentlyDamagedByTower( interval ));
+end
+
+function AttackMove()
+    local npcBot = GetBot();
+    local target = npcBot:GetTarget();
+    local attackRange = npcBot:GetAttackRange();
+
+    if ( target ~= nil and target:IsAlive() ) then
+        -- Expected movement --
+        local expectedMovement = target:GetExtrapolatedLocation( 0.2 );
+        -- Check if we can attack again --
+        if ( npcBot:GetLastAttackTime() >= npcBot:GetSecondsPerAttack() and GetUnitToUnitDistance( target, npcBot ) <= attackRange ) then
+            -- Attack once and keep moving.
+            npcBot:Action_AttackUnit( target, true );
+            npcBot:ActionQueue_MoveToLocation( expectedMovement );
+        else
+            npcBot:Action_MoveToLocation( expectedMovement );
+        end
     end
 end
