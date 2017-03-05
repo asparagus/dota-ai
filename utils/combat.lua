@@ -146,3 +146,40 @@ function AttackMove()
         end
     end
 end
+
+function ExtrapolateHealth( unit, interval )
+    -- Get the health of a unit in the future if all the current units keep attacking it.
+    local nearbyCreeps = unit:GetNearbyCreeps( 600, true );
+    local nearbyHeroes = unit:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
+    local nearbyTowers = unit:GetNearbyTowers( 800, true );
+
+    local expectedDamage = 0;
+    if ( nearbyCreeps ~= nil ) then
+        for _, creep in pairs( nearbyCreeps ) do
+            if ( creep:GetAttackTarget() == unit ) then
+                expectedDamage = expectedDamage + creep:GetEstimatedDamageToTarget(
+                    true, unit, interval, DAMAGE_TYPE_PHYSICAL );
+            end
+        end
+    end
+
+    if ( nearbyHeroes ~= nil ) then
+        for _, hero in pairs( nearbyHeroes ) do
+            if ( hero:GetAttackTarget() == unit ) then
+                expectedDamage = expectedDamage + hero:GetEstimatedDamageToTarget(
+                    true, unit, interval, DAMAGE_TYPE_PHYSICAL );
+            end
+        end
+    end
+
+    if ( nearbyTowers ~= nil ) then
+        for _, tower in pairs( nearbyTowers ) do
+            if ( tower:GetAttackTarget() == unit ) then
+                expectedDamage = expectedDamage + tower:GetEstimatedDamageToTarget(
+                    true, unit, interval, DAMAGE_TYPE_PHYSICAL );
+            end
+        end
+    end
+
+    return math.max( 0, unit:GetHealth() - expectedDamage );
+end

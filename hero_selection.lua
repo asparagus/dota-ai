@@ -18,7 +18,7 @@ function Think()
         print( "selecting dire" );
         SelectHero( 7, "npc_dota_hero_phantom_assassin" );
         SelectHero( 8, "npc_dota_hero_axe" );
-        SelectHero( 9, "npc_dota_hero_dazzle" );
+        SelectHero( 9, "npc_dota_hero_crystal_maiden" );
         SelectHero( 10, "npc_dota_hero_razor" );
         SelectHero( 11, "npc_dota_hero_skywrath_mage" );
     end

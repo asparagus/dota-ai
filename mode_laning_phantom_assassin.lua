@@ -96,23 +96,36 @@ end
 
 function ConsiderApproachingCreeps()
     local npcBot = GetBot();
+    local nDamage = npcBot:GetAttackDamage();
+    local eDamageType = DAMAGE_TYPE_PHYSICAL;
+    local attackPoint = npcBot:GetAttackPoint();
+    local attackRange = npcBot:GetAttackRange();
     local nAcqRange = npcBot:GetAcquisitionRange();
+    local movementSpeed = npcBot:GetCurrentMovementSpeed();
     local alliedCreeps = npcBot:GetNearbyCreeps( nAcqRange, false );
     local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
 
     -- TODO: Include a function in combat.lua to extrapolate future HP based on attackers
     -- Move closer to dying creeps
     for _, creep in pairs ( enemyCreeps ) do
-        local creepHealth = creep:GetHealth();
-        if ( creep:GetHealth() < 150 and WasRecentlyDamaged( creep, 1 ) ) then
+        local timeToReachCreep = (
+            math.max( GetUnitToUnitDistance( npcBot, creep ) - attackRange, 0 ) /
+            npcBot:GetCurrentMovementSpeed()
+        );
+        local creepHealth = ExtrapolateHealth( creep, timeToReachCreep + attackPoint );
+        if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
             return BOT_ACTION_DESIRE_MODERATE, creep;
         end
     end
 
     -- Move closer to deny creeps
     for _, creep in pairs ( alliedCreeps ) do
-        local creepHealth = creep:GetHealth();
-        if ( creep:GetHealth() < 150 and WasRecentlyDamaged( creep, 1 ) ) then
+        local timeToReachCreep = (
+            math.max( GetUnitToUnitDistance( npcBot, creep ) - attackRange, 0 ) /
+            npcBot:GetCurrentMovementSpeed()
+        );
+        local creepHealth = ExtrapolateHealth( creep, timeToReachCreep + attackPoint );
+        if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
             return BOT_ACTION_DESIRE_MODERATE, creep;
         end
     end
@@ -139,12 +152,13 @@ function ConsiderLastHittingCreeps()
     local npcBot = GetBot();
     local nAcqRange = npcBot:GetAcquisitionRange();
     local nDamage = npcBot:GetAttackDamage();
+    local attackPoint = npcBot:GetAttackPoint();
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
 
     local alliedCreeps = npcBot:GetNearbyCreeps( nAcqRange, false );
     local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
     for _, creep in pairs( enemyCreeps ) do
-        local creepHealth = creep:GetHealth();
+        local creepHealth = ExtrapolateHealth( creep, attackPoint );
         -- Check if creep can be last hitted --
         if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
             return BOT_ACTION_DESIRE_HIGH, creep;
@@ -152,7 +166,7 @@ function ConsiderLastHittingCreeps()
     end
 
     for _, creep in pairs( alliedCreeps ) do
-        local creepHealth = creep:GetHealth();
+        local creepHealth = ExtrapolateHealth( creep, attackPoint );
         -- Check if creep can be denied --
         if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
             return BOT_ACTION_DESIRE_HIGH, creep;
