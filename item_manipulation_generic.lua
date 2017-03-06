@@ -1,75 +1,8 @@
-
-
-function C9Prevention()
-    --thanks nostrademous !
-
---    print("C9Prevention called");
-    local npcBot = GetBot();
-
-    for i=0,14 do
-        local sCurItem = npcBot:GetItemInSlot( i );
-        if ( sCurItem ~= nil ) then
-            if ( sCurItem:GetName() == "item_tpscroll" or sCurItem:GetName() == "item_recipe_travel_boots" or sCurItem:GetName() == "item_travel_boots" or sCurItem:GetName() == "item_travel_boots_2" ) then
---                print("C9Prevention tp / travels found");
-                return; --we are done, no need to check further
-            end
-            if ( ( i == 6 or i == 7 or i == 8 ) and ( sCurItem:GetName() == "item_tpscroll" and CanSell() ) ) then
---                print("C9Prevention tp in backpack");
-                npcBot:ActionImmediate_SellItem( sCurItem );
-                return; --attempt to buy tp on next loop
-            end
-            if ( i > 5 and ( sCurItem:GetName() == "item_tpscroll" and npcBot:DistanceFromSideShop() == 0 ) ) then
---                bot in side shop with tp in back/stash, likely wants to buy one to join a fight
---                pity this doesn't work, bots will only sell items that are on them, not stuff in stash
---                print("C9Prevention at side shop no tp in slots");
-                npcBot:ActionImmediate_SellItem( sCurItem );
-                return; --attempt to buy tp on next loop
-            end
-        end
-    end
-
-    if ( npcBot:GetCourierValue() >= GetItemCost( "item_tpscroll" ) ) then
---        print("C9Prevention on cour");
-        return; --likely on courier, we are done, no need to check further
-    end
-
-    if ( npcBot:GetGold() >= GetItemCost( "item_tpscroll" ) ) then
-        if ( npcBot:DistanceFromFountain() == 0 and GameTime() > 60 ) then
---            Bot died or retreated in lane
-            if ( HasSpareSlot() ) then
-                npcBot:ActionImmediate_PurchaseItem( "item_tpscroll" );
-                return;
-            else
-                ClearSpaceAttempt();
-                return;
-            end
-        end
-        if ( GameTime() < 600 ) then
-            return; --bit early for tp's
-        end
-        if not ( HasSpareSlot() ) then
---            print("C9Prevention no space, attempting to make room and buy on next loop");
-            ClearSpaceAttempt();
-            return;
-        else
-            npcBot:ActionImmediate_PurchaseItem( "item_tpscroll" );
-        end
-    end
-
-
-end
-
-
 function CanSell()
-
---    print("CanSell called");
     local npcBot = GetBot();
-
-    if ( npcBot:DistanceFromFountain() == 0 or npcBot:DistanceFromSideShop() == 0 or npcBot:DistanceFromSecretShop() == 0 ) then return true;
-    end
-
-    return false;
-
+    return ( npcBot:DistanceFromFountain() == 0 or
+             npcBot:DistanceFromSideShop() == 0 or
+             npcBot:DistanceFromSecretShop() == 0 );
 end
 
 

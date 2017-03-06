@@ -19,8 +19,8 @@ function Think()
         SelectHero( 7, "npc_dota_hero_phantom_assassin" );
         SelectHero( 8, "npc_dota_hero_axe" );
         SelectHero( 9, "npc_dota_hero_crystal_maiden" );
-        SelectHero( 10, "npc_dota_hero_razor" );
-        SelectHero( 11, "npc_dota_hero_skywrath_mage" );
+        SelectHero( 10, "npc_dota_hero_luna" );
+        SelectHero( 11, "npc_dota_hero_warlock" );
     end
 
 end

@@ -1,6 +1,8 @@
 CREEP_AGGRO_RANGE = 500;
 HERO_AGGRO_RANGE = 800;
 TOWER_AGGRO_RANGE = 800;
+MAX_RANGE = 1600;
+
 
 -- Compute the damage dealt by enemies over a given interval to a hero fighting at the given location
 function NearbyEnemyDamage( hero, location, interval )
@@ -81,9 +83,14 @@ function ChooseTarget( nearbyEnemies )
     return target;
 end
 
+
 function TakeOffAggro()
-    print("Taking off aggro");
     local npcBot = GetBot();
+    -- Probably already moving out of aggro range.
+    if ( npcBot:GetCurrentActionType() == BOT_ACTION_TYPE_MOVE_TO ) then
+        return;
+    end
+
     local team = npcBot:GetTeam();
     local closestUnit = nil;
     local closestUnitDistance = 1000;
@@ -149,9 +156,9 @@ end
 
 function ExtrapolateHealth( unit, interval )
     -- Get the health of a unit in the future if all the current units keep attacking it.
-    local nearbyCreeps = unit:GetNearbyCreeps( 600, true );
-    local nearbyHeroes = unit:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
-    local nearbyTowers = unit:GetNearbyTowers( 800, true );
+    local nearbyCreeps = unit:GetNearbyCreeps( CREEP_AGGRO_RANGE, true );
+    local nearbyHeroes = unit:GetNearbyHeroes( MAX_RANGE, true, BOT_MODE_NONE );
+    local nearbyTowers = unit:GetNearbyTowers( TOWER_AGGRO_RANGE, true );
 
     local expectedDamage = 0;
     if ( nearbyCreeps ~= nil ) then

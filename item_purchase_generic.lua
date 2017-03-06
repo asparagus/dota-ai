@@ -74,9 +74,6 @@ function DoStuff()
     if ( ( CanSell() and GameTime() > 750 ) and not HasSpareSlot() ) then
         ItemRotation();
     end
-
-    C9Prevention();
-
 end
 
 function TravelsDone()
