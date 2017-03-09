@@ -102,10 +102,9 @@ function ConsiderApproachingCreeps()
     local attackRange = npcBot:GetAttackRange();
     local nAcqRange = npcBot:GetAcquisitionRange();
     local movementSpeed = npcBot:GetCurrentMovementSpeed();
-    local alliedCreeps = npcBot:GetNearbyCreeps( nAcqRange, false );
-    local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
+    local alliedCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, false );
+    local enemyCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, true );
 
-    -- TODO: Include a function in combat.lua to extrapolate future HP based on attackers
     -- Move closer to dying creeps
     for _, creep in pairs ( enemyCreeps ) do
         local timeToReachCreep = (
@@ -155,7 +154,7 @@ function ConsiderLastHittingCreeps()
     local attackPoint = npcBot:GetAttackPoint();
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
 
-    local alliedCreeps = npcBot:GetNearbyCreeps( nAcqRange, false );
+    local alliedCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, false );
     local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
     for _, creep in pairs( enemyCreeps ) do
         local creepHealth = ExtrapolateHealth( creep, attackPoint );
@@ -221,8 +220,8 @@ function ConsiderAutoAttackingCreeps()
         mode = PUSHING;
     end
 
-    local alliedCreeps = npcBot:GetNearbyCreeps( nAcqRange, false );
-    local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
+    local alliedCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, false );
+    local enemyCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, true );
     if ( mode == PULLING and #alliedCreeps >= #enemyCreeps ) then
         for _, creep in pairs( alliedCreeps ) do
             local creepHealth = creep:GetHealth();

@@ -72,10 +72,8 @@ function ConsiderStiflingDagger()
 
     -- If a mode has set a target, and we can kill them, do it
     local npcTarget = npcBot:GetTarget();
-    if ( npcTarget ~= nil and CanCastStiflingDaggerOnTarget( npcTarget ) )
-    then
-        if (npcTarget:GetActualIncomingDamage( nDamage, eDamageType ) > npcTarget:GetHealth() and GetUnitToUnitDistance( npcTarget, npcBot ) < ( nCastRange + 200 ) )
-        then
+    if ( npcTarget ~= nil and CanCastStiflingDaggerOnTarget( npcTarget ) ) then
+        if ( GetUnitToUnitDistance( npcTarget, npcBot ) < nCastRange ) then
             return BOT_ACTION_DESIRE_HIGH, npcTarget
         end
     end
@@ -84,8 +82,8 @@ function ConsiderStiflingDagger()
         -- Check for creeps to last hit
         local currentMana = npcBot:GetMana();
         if ( currentMana > 150 ) then
-            local nearbyCreeps = npcBot:GetNearbyCreeps( nCastRange + 200, true );
-            local nearbyEnemies = npcBot:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
+            local nearbyCreeps = npcBot:GetNearbyCreeps( nCastRange, true );
+            local nearbyEnemies = npcBot:GetNearbyHeroes( nCastRange, true, BOT_MODE_NONE );
             for _, creep in pairs( nearbyCreeps ) do
                 local creepHealth = creep:GetHealth();
                 -- Check if the target would die with a dagger
@@ -102,16 +100,18 @@ function ConsiderStiflingDagger()
         end
 
         -- Harass --
-        local enemiesToHarass = npcBot:GetNearbyHeroes( nCastRange + 400, true, BOT_MODE_NONE );
+        local enemiesToHarass = npcBot:GetNearbyHeroes( nCastRange, true, BOT_MODE_NONE );
         local weakestHero = nil;
         local weakestHeroHealth = 999999;
         for _,npcTarget in pairs( enemiesToHarass ) do
-            local currentHealth = npcTarget:GetHealth();
-            local expectedDamage = npcTarget:GetActualIncomingDamage( nDamage, eDamageType );
-            local remainingHealth = currentHealth - expectedDamage;
-            if ( remainingHealth < weakestHeroHealth ) then
-                weakestHeroHealth = remainingHealth;
-                weakestHero = npcTarget;
+            if ( CanCastStiflingDaggerOnTarget( npcTarget ) ) then
+                local currentHealth = npcTarget:GetHealth();
+                local expectedDamage = npcTarget:GetActualIncomingDamage( nDamage, eDamageType );
+                local remainingHealth = currentHealth - expectedDamage;
+                if ( remainingHealth < weakestHeroHealth ) then
+                    weakestHeroHealth = remainingHealth;
+                    weakestHero = npcTarget;
+                end
             end
         end
 
@@ -122,23 +122,6 @@ function ConsiderStiflingDagger()
             if ( currentMana >= 150 or ( currentMana / npcBot:GetMaxMana() >= currentHealth / npcBot:GetMaxHealth() ) ) then
                 return BOT_ACTION_DESIRE_MODERATE, weakestHero;
             end
-        end
-    end
-
-    -- If we're in a teamfight, use it on the most valuable fragile target
-    local tableNearbyAttackingAlliedHeroes = npcBot:GetNearbyHeroes( 1000, false, BOT_MODE_ATTACK );
-    if ( #tableNearbyAttackingAlliedHeroes >= 2 )
-    then
-
-        local npcMostDangerousEnemy = nil;
-        local nMostDangerousDamage = 0;
-
-        local nearbyEnemyHeroes = npcBot:GetNearbyHeroes( nCastRange, true, BOT_MODE_NONE );
-        local target = ChooseTarget(nearbyEnemyHeroes);
-
-        if ( target ~= nil ) then
-            npcBot:SetTarget( target );
-            return BOT_ACTION_DESIRE_HIGH, target;
         end
     end
 
@@ -198,20 +181,31 @@ function ConsiderPhantomStrike()
     end
 
     -- If we're seriously retreating, try to run to a teammate
-    if ( npcBot:GetActiveMode() == BOT_MODE_RETREAT and npcBot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH )
-    then
-        local distanceToFountain = npcBot:DistanceFromFountain();
-        -- local tableNearbyEnemyHeroes = npcBot:GetNearbyHeroes( nCastRange + nRadius + 200, true, BOT_MODE_NONE );
-        -- for _,npcEnemy in pairs( tableNearbyEnemyHeroes )
-        -- do
-        --     if ( npcBot:WasRecentlyDamagedByHero( npcEnemy, 2.0 ) )
-        --     then
-        --         if ( CanCastPhantomStrikeOnTarget( npcEnemy ) )
-        --         then
-        --             return BOT_ACTION_DESIRE_MODERATE, npcEnemy;
-        --         end
-        --     end
-        -- end
+    if ( npcBot:GetActiveMode() == BOT_MODE_RETREAT and npcBot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH ) then
+        local bestTarget = nil;
+        local bestDistance = npcBot:DistanceFromFountain();
+        local alliedHeroes = npcBot:GetNearbyHeroes( nCastRange, false, BOT_MODE_NONE );
+        local alliedCreeps = npcBot:GetNearbyCreeps( nCastRange, false );
+
+        for _, alliedHero in pairs( alliedHeroes ) do
+            local currentDistance = alliedHero:DistanceFromFountain();
+            if ( currentDistance < bestDistance ) then
+                bestDistance = currentDistance;
+                bestTarget = alliedHero;
+            end
+        end
+
+        for _, alliedCreep in pairs( alliedCreeps ) do
+            local currentDistance = alliedCreep:DistanceFromFountain();
+            if ( currentDistance < bestDistance ) then
+                bestDistance = currentDistance;
+                bestTarget = alliedCreep;
+            end
+        end
+
+        if ( bestTarget ~= nil ) then
+            return npcBot:GetActiveModeDesire(), bestTarget;
+        end
     end
 
     -- If we're going after someone
