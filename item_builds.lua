@@ -84,14 +84,11 @@ local Builds = {
     },
 
     npc_dota_hero_crystal_maiden = {
-        "item_tango",
         "item_courier",
-        "item_branches",
-        "item_branches",
+        "item_tango",
         "item_wind_lace",
-        "item_observer_ward",
-        "item_observer_ward",
-        "item_flying_courier",
+        "item_branches",
+        "item_branches",
         "item_boots",
         "item_ring_of_protection",
         "item_ring_of_regen",

@@ -4,75 +4,74 @@ require( GetScriptDirectory().."/utils/movement" )
 PULLING = 1;
 PUSHING = 2;
 
-function Think()
-    local npcBot = GetBot();
-    local assignedLane = npcBot:GetAssignedLane();
-
-    if ( ConsiderInitialPosition() > BOT_ACTION_DESIRE_NONE ) then
-        npcBot:Action_MoveToLocation( GetLocationAlongLane( assignedLane, 0.30 ) );
-    elseif ( ConsiderCreepBlock() > BOT_ACTION_DESIRE_NONE ) then
-        CreepBlock();
+function GetDesire()
+    if ( DotaTime() < 600 ) then
+        return BOT_MODE_DESIRE_LOW;
     else
-        -- Use these!
-        desireToApproachCreeps, creepToApproach = ConsiderApproachingCreeps();
-        desireToLastHit, creepToLastHit = ConsiderLastHittingCreeps();
-        desireToRemoveAggro = ConsiderRemovingAggro();
-        desireToAutoAttack, creepToAutoAttack = ConsiderAutoAttackingCreeps();
-        desireToBackOff, backOffAmount = ConsiderBackingOff();
+        return BOT_MODE_DESIRE_NONE;
+    end
+end
 
-        utmostDesire = math.max(
-            desireToApproachCreeps,
-            desireToLastHit,
-            desireToRemoveAggro,
-            desireToAutoAttack,
-            desireToBackOff
-        );
+function Think()
+    -- Get the most desired action out of the possibilities.
+    local utmostDesire = 0;
+    local bestAction = nil;
+    local bestTarget = nil;
+    for i, possibleAction in pairs( PossibleActions ) do
+        local desire, target = possibleAction.Desire();
+        if ( desire > utmostDesire ) then
+            utmostDesire = desire;
+            bestAction = possibleAction.Action;
+            bestTarget = target;
+        end
+    end
 
-        local npcBot = GetBot();
-        if ( utmostDesire > BOT_ACTION_DESIRE_NONE ) then
-            if ( desireToApproachCreeps == utmostDesire ) then
-                ApproachCreep( creepToApproach );
-            elseif ( desireToLastHit == utmostDesire ) then
-                LastHitCreep( creepToLastHit );
-            elseif ( desireToRemoveAggro == utmostDesire ) then
-                TakeOffAggro();
-            elseif ( desireToAutoAttack == utmostDesire ) then
-                AttackCreep( creepToAutoAttack );
-            elseif ( desireToBackOff == utmostDesire ) then
-                Retreat( backOffAmount );
-            end
+    -- Execute the action on the chosen target, if any
+    if ( utmostDesire > BOT_ACTION_DESIRE_NONE ) then
+        if ( bestTarget ) then
+            bestAction( bestTarget );
         else
-            StayInLane();
+            bestAction();
         end
     end
 end
 
-function ConsiderInitialPosition()
-    local time = DotaTime();
-    if ( time < 0 ) then
-        return BOT_ACTION_DESIRE_HIGH;
+function ConsiderMovingToLane()
+    local bot = GetBot();
+    local team = GetTeam();
+    local assignedLane = bot:GetAssignedLane();
+    local laneFrontAmount = GetLaneFrontAmount( team, assignedLane, true );
+    local laneFrontLocation = GetLaneFrontLocation( team, assignedLane, laneFrontAmount );
+    if ( GetUnitToLocationDistance( bot, laneFrontLocation ) > 800 ) then
+        return BOT_ACTION_DESIRE_MODERATE;
     else
         return BOT_ACTION_DESIRE_NONE;
     end
 end
 
+-- Block creeps when there are no enemies around
 function ConsiderCreepBlock()
-    local time = DotaTime();
-    if ( 0 < time and time < 18 ) then
-        return BOT_ACTION_DESIRE_HIGH;
+    local bot = GetBot();
+    local alliedCreeps = bot:GetNearbyLaneCreeps( 1600, false );
+    local enemyCreeps = bot:GetNearbyLaneCreeps( 800, true );
+    local enemyHeroes = bot:GetNearbyHeroes( 1000, true, BOT_MODE_NONE );
+    local enemyTowers = bot:GetNearbyTowers( 1000, true );
+
+    if ( #alliedCreeps > 0 and ( #enemyCreeps + #enemyHeroes + #enemyTowers == 0 ) ) then
+        return BOT_ACTION_DESIRE_MODERATE;
     else
         return BOT_ACTION_DESIRE_NONE;
     end
 end
 
 function CreepBlock()
-    local npcBot = GetBot();
-    local assignedLane = npcBot:GetAssignedLane();
-    local team = npcBot:GetTeam();
+    local bot = GetBot();
+    local assignedLane = bot:GetAssignedLane();
+    local team = bot:GetTeam();
 
-    local laneCreeps = npcBot:GetNearbyLaneCreeps( 1600, false );
+    local laneCreeps = bot:GetNearbyLaneCreeps( 1600, false );
     local ancient = GetAncient(team);
-    local ancientDistance = GetUnitToUnitDistance( npcBot, ancient );
+    local ancientDistance = GetUnitToUnitDistance( bot, ancient );
     local firstCreep = nil;
     local firstCreepProgress = 0;
 
@@ -90,26 +89,26 @@ function CreepBlock()
     if ( firstCreep ~= nil ) then
         -- Predict the creep's future position and move there to block their way --
         local extrapolatedLocation = firstCreep:GetExtrapolatedLocation( 0.30 );
-        npcBot:Action_MoveToLocation( extrapolatedLocation );
+        bot:Action_MoveToLocation( extrapolatedLocation );
     end
 end
 
 function ConsiderApproachingCreeps()
-    local npcBot = GetBot();
-    local nDamage = npcBot:GetAttackDamage();
+    local bot = GetBot();
+    local nDamage = bot:GetAttackDamage();
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
-    local attackPoint = npcBot:GetAttackPoint();
-    local attackRange = npcBot:GetAttackRange();
-    local nAcqRange = npcBot:GetAcquisitionRange();
-    local movementSpeed = npcBot:GetCurrentMovementSpeed();
-    local alliedCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, false );
-    local enemyCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, true );
+    local attackPoint = bot:GetAttackPoint();
+    local attackRange = bot:GetAttackRange();
+    local nAcqRange = bot:GetAcquisitionRange();
+    local movementSpeed = bot:GetCurrentMovementSpeed();
+    local alliedCreeps = bot:GetNearbyLaneCreeps( nAcqRange, false );
+    local enemyCreeps = bot:GetNearbyLaneCreeps( nAcqRange, true );
 
     -- Move closer to dying creeps
     for _, creep in pairs ( enemyCreeps ) do
         local timeToReachCreep = (
-            math.max( GetUnitToUnitDistance( npcBot, creep ) - attackRange, 0 ) /
-            npcBot:GetCurrentMovementSpeed()
+            math.max( GetUnitToUnitDistance( bot, creep ) - attackRange, 0 ) /
+            bot:GetCurrentMovementSpeed()
         );
         local creepHealth = ExtrapolateHealth( creep, timeToReachCreep + attackPoint );
         if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
@@ -120,8 +119,8 @@ function ConsiderApproachingCreeps()
     -- Move closer to deny creeps
     for _, creep in pairs ( alliedCreeps ) do
         local timeToReachCreep = (
-            math.max( GetUnitToUnitDistance( npcBot, creep ) - attackRange, 0 ) /
-            npcBot:GetCurrentMovementSpeed()
+            math.max( GetUnitToUnitDistance( bot, creep ) - attackRange, 0 ) /
+            bot:GetCurrentMovementSpeed()
         );
         local creepHealth = ExtrapolateHealth( creep, timeToReachCreep + attackPoint );
         if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
@@ -133,29 +132,29 @@ function ConsiderApproachingCreeps()
 end
 
 function ApproachCreep( creep )
-    local npcBot = GetBot();
-    npcBot:Action_MoveToUnit( creep );
+    local bot = GetBot();
+    bot:Action_MoveToUnit( creep );
 end
 
 function AttackCreep( creep )
-    local npcBot = GetBot();
-    npcBot:Action_AttackUnit( creep, true );
+    local bot = GetBot();
+    bot:Action_AttackUnit( creep, true );
 end
 
 function MoveToLocation( location )
-    local npcBot = GetBot();
-    npcBot:Action_MoveToLocation( location );
+    local bot = GetBot();
+    bot:Action_MoveToLocation( location );
 end
 
 function ConsiderLastHittingCreeps()
-    local npcBot = GetBot();
-    local nAcqRange = npcBot:GetAcquisitionRange();
-    local nDamage = npcBot:GetAttackDamage();
-    local attackPoint = npcBot:GetAttackPoint();
+    local bot = GetBot();
+    local nAcqRange = bot:GetAcquisitionRange();
+    local nDamage = bot:GetAttackDamage();
+    local attackPoint = bot:GetAttackPoint();
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
 
-    local alliedCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, false );
-    local enemyCreeps = npcBot:GetNearbyCreeps( nAcqRange, true );
+    local alliedCreeps = bot:GetNearbyLaneCreeps( nAcqRange, false );
+    local enemyCreeps = bot:GetNearbyCreeps( nAcqRange, true );
     for _, creep in pairs( enemyCreeps ) do
         local creepHealth = ExtrapolateHealth( creep, attackPoint );
         -- Check if creep can be last hitted --
@@ -176,13 +175,13 @@ function ConsiderLastHittingCreeps()
 end
 
 function LastHitCreep( creep )
-    local npcBot = GetBot();
-    npcBot:Action_AttackUnit(creep, false);
+    local bot = GetBot();
+    bot:Action_AttackUnit( creep, false );
 end
 
 function ConsiderRemovingAggro()
-    local npcBot = GetBot();
-    if ( npcBot:WasRecentlyDamagedByCreep( 1 ) or npcBot:WasRecentlyDamagedByTower( 1 ) ) then
+    local bot = GetBot();
+    if ( bot:WasRecentlyDamagedByCreep( 1 ) or bot:WasRecentlyDamagedByTower( 1 ) ) then
         return BOT_ACTION_DESIRE_HIGH;
     else
         return BOT_ACTION_DESIRE_NONE;
@@ -190,14 +189,14 @@ function ConsiderRemovingAggro()
 end
 
 function ConsiderAutoAttackingCreeps()
-    local npcBot = GetBot();
-    local assignedLane = npcBot:GetAssignedLane();
+    local bot = GetBot();
+    local assignedLane = bot:GetAssignedLane();
 
-    local nDamage = npcBot:GetAttackDamage();
+    local nDamage = bot:GetAttackDamage();
     local eDamageType = DAMAGE_TYPE_PHYSICAL;
-    local nAcqRange = npcBot:GetAcquisitionRange();
+    local nAcqRange = bot:GetAcquisitionRange();
 
-    local team = npcBot:GetTeam();
+    local team = bot:GetTeam();
     local opposingTeam = nil;
     if ( team == TEAM_RADIANT ) then
         opposingTeam = TEAM_DIRE;
@@ -220,8 +219,8 @@ function ConsiderAutoAttackingCreeps()
         mode = PUSHING;
     end
 
-    local alliedCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, false );
-    local enemyCreeps = npcBot:GetNearbyLaneCreeps( nAcqRange, true );
+    local alliedCreeps = bot:GetNearbyLaneCreeps( nAcqRange, false );
+    local enemyCreeps = bot:GetNearbyLaneCreeps( nAcqRange, true );
     if ( mode == PULLING and #alliedCreeps >= #enemyCreeps ) then
         for _, creep in pairs( alliedCreeps ) do
             local creepHealth = creep:GetHealth();
@@ -250,23 +249,22 @@ function ConsiderAutoAttackingCreeps()
 end
 
 function ConsiderBackingOff()
-    local npcBot = GetBot();
-    local location = npcBot:GetLocation();
-    local enemyHeroes = npcBot:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
+    local bot = GetBot();
+    local location = bot:GetLocation();
+    local enemyHeroes = bot:GetNearbyHeroes( 1600, true, BOT_MODE_NONE );
 
     local delta = 0;
     for _, hero in pairs( enemyHeroes ) do
         local heroRange = hero:GetAttackRange();
-        local heroLocation = hero:GetLocation();
-        local currentDistance = GetUnitToUnitDistance( npcBot, hero );
-        if ( currentDistance <= heroRange + 100 ) then
+        local currentDistance = GetUnitToUnitDistance( bot, hero );
+        if ( currentDistance <= heroRange + 150 ) then
             -- We're in attack range of the enemy, retreat.
             -- Always retreat a bit further than needed.
             delta = math.max( heroRange + 150 - currentDistance, delta );
         end
     end
 
-    local fraction = npcBot:GetHealth() / npcBot:GetMaxHealth();
+    local fraction = bot:GetHealth() / bot:GetMaxHealth();
     if ( delta > 0 ) then
         if ( fraction < 0.1 ) then
             return BOT_ACTION_DESIRE_ABSOLUTE, delta;
@@ -283,11 +281,22 @@ function ConsiderBackingOff()
 end
 
 function StayInLane()
-    local npcBot = GetBot();
-    local team = npcBot:GetTeam();
-    local assignedLane = npcBot:GetAssignedLane();
+    local bot = GetBot();
+    local team = bot:GetTeam();
+    local assignedLane = bot:GetAssignedLane();
     local laneFront = GetLaneFrontLocation( team, assignedLane, 0 );
-    if ( GetUnitToLocationDistance( npcBot, laneFront ) > 200 ) then
+    if ( GetUnitToLocationDistance( bot, laneFront ) > 800 ) then
+        print('Just chillin');
         MoveToLocation( laneFront );
     end
 end
+
+PossibleActions = {
+    { Desire = ConsiderApproachingCreeps, Action = ApproachCreep },
+    { Desire = ConsiderCreepBlock, Action = CreepBlock },
+    { Desire = ConsiderLastHittingCreeps, Action = LastHitCreep },
+    { Desire = ConsiderRemovingAggro, Action = TakeOffAggro },
+    { Desire = ConsiderAutoAttackingCreeps, Action = AttackCreep },
+    { Desire = ConsiderBackingOff, Action = Retreat },
+    { Desire = ConsiderMovingToLane, Action = StayInLane }
+};

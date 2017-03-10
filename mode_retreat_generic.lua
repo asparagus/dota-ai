@@ -11,25 +11,24 @@ SHRINES = {
 };
 
 function GetDesire()
-    return BOT_ACTION_DESIRE_NONE;
-    -- local npcBot = GetBot();
-    -- local team = npcBot:GetTeam();
+    local npcBot = GetBot();
+    local team = npcBot:GetTeam();
 
-    -- local health = npcBot:GetHealth();
-    -- local maxHealth = npcBot:GetMaxHealth();
-    -- local fraction = health / maxHealth;
+    local health = npcBot:GetHealth();
+    local maxHealth = npcBot:GetMaxHealth();
+    local fraction = health / maxHealth;
 
-    -- if ( fraction <= 0.4 ) then
-    --     return BOT_ACTION_DESIRE_MODERATE;
-    -- elseif ( fraction <= 0.3 ) then
-    --     return BOT_ACTION_DESIRE_HIGH;
-    -- elseif ( fraction <= 0.2 ) then
-    --     return BOT_ACTION_DESIRE_VERY_HIGH;
-    -- end
+    if ( fraction <= 0.4 ) then
+        return BOT_ACTION_DESIRE_MODERATE;
+    elseif ( fraction <= 0.3 ) then
+        return BOT_ACTION_DESIRE_HIGH;
+    elseif ( fraction <= 0.2 ) then
+        return BOT_ACTION_DESIRE_VERY_HIGH;
+    end
 
-    -- if ( IsHealing() ) then
-    --     return BOT_ACTION_DESIRE_HIGH;
-    -- end
+    if ( IsHealing() ) then
+        return BOT_ACTION_DESIRE_HIGH;
+    end
 end
 
 function IsHealing()

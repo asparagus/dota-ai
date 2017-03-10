@@ -39,7 +39,7 @@ function NearbyEnemyDamage( hero, location, interval )
     return totalDamage;
 end
 
-function ShouldTrade( enemy )
+function EvaluateTrade( enemy )
     local npcBot = GetBot();
     local location = enemy:GetLocation();
 
@@ -52,17 +52,18 @@ function ShouldTrade( enemy )
     -- The trade is advantageous if the % damage dealt is greater than the received.
     -- Additional condition: Do not die
     if totalEnemyDamage > npcBot:GetHealth() then
-        print( "Trade would result in death" );
-        return false;
+        -- print( "Trade would result in death" );
+        return BOT_ACTION_DESIRE_NONE;
     end
 
-    local result = totalAlliedDamage / enemy:GetHealth() > totalEnemyDamage / npcBot:GetHealth();
-    if ( result ) then
-        print( "Trade is favorable: " .. totalAlliedDamage .. " v/s " .. totalEnemyDamage );
-        return true;
+    local enemyRelativeDamageTaken = totalAlliedDamage / enemy:GetHealth();
+    local selfRelativeDamageTaken = totalEnemyDamage / npcBot:GetHealth();
+    if ( enemyRelativeDamageTaken > selfRelativeDamageTaken ) then
+        -- print( "Trade is favorable: " .. totalAlliedDamage .. " v/s " .. totalEnemyDamage );
+        return enemyRelativeDamageTaken / ( selfRelativeDamageTaken + enemyRelativeDamageTaken );
     else
-        print( "Trade is unfavorable: " .. totalAlliedDamage .. " v/s " .. totalEnemyDamage );
-        return false;
+        -- print( "Trade is unfavorable: " .. totalAlliedDamage .. " v/s " .. totalEnemyDamage );
+        return BOT_ACTION_DESIRE_NONE;
     end
 end
 
@@ -146,9 +147,11 @@ function AttackMove()
         -- Check if we can attack again --
         if ( npcBot:GetLastAttackTime() >= npcBot:GetSecondsPerAttack() and GetUnitToUnitDistance( target, npcBot ) <= attackRange ) then
             -- Attack once and keep moving.
+            print('Hitting');
             npcBot:Action_AttackUnit( target, true );
             npcBot:ActionQueue_MoveToLocation( expectedMovement );
         else
+            print('Moving closer');
             npcBot:Action_MoveToLocation( expectedMovement );
         end
     end

@@ -25,3 +25,18 @@ function GetTowersByLane( team, lane )
 
     return towers;
 end
+
+function GetFarmPriority( hero )
+    local heroName = hero:GetUnitName();
+    if ( heroName == 'npc_dota_hero_luna' ) then
+        return 1;
+    elseif ( heroName == 'npc_dota_hero_phantom_assassin' ) then
+        return 2;
+    elseif ( heroName == 'npc_dota_hero_axe' ) then
+        return 3;
+    elseif ( heroName == 'npc_dota_hero_warlock' ) then
+        return 4;
+    elseif ( heroName == 'npc_dota_hero_crystal_maiden' ) then
+        return 5;
+    end
+end

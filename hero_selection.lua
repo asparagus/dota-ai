@@ -4,25 +4,44 @@
 
 function Think()
 
+    local team = GetTeam();
+    local players = GetTeamPlayers( team );
 
-    if ( GetTeam() == TEAM_RADIANT )
-    then
-        print( "selecting radiant" );
-        SelectHero( 2, "npc_dota_hero_phantom_assassin" );
-        SelectHero( 3, "npc_dota_hero_axe" );
-        SelectHero( 4, "npc_dota_hero_dazzle" );
-        SelectHero( 5, "npc_dota_hero_razor" );
-        SelectHero( 6, "npc_dota_hero_skywrath_mage" );
-    elseif ( GetTeam() == TEAM_DIRE )
-    then
-        print( "selecting dire" );
-        SelectHero( 7, "npc_dota_hero_phantom_assassin" );
-        SelectHero( 8, "npc_dota_hero_axe" );
-        SelectHero( 9, "npc_dota_hero_crystal_maiden" );
-        SelectHero( 10, "npc_dota_hero_luna" );
-        SelectHero( 11, "npc_dota_hero_warlock" );
+    local mode = GetGameMode();
+    local heroes = nil;
+
+    if ( mode == GAMEMODE_AP ) then
+        print('All pick');
+        heroes = {
+            "npc_dota_hero_axe",
+            "npc_dota_hero_crystal_maiden",
+            "npc_dota_hero_phantom_assassin",
+            "npc_dota_hero_luna",
+            "npc_dota_hero_warlock",
+        };
+    -- elseif ( mode == GAMEMODE_1V1MID ) then
+    --     print('1v1 Mid');
+    --     heroes = {
+    --         "npc_dota_hero_phantom_assassin"
+    --     };
+
+    --     -- If a human player is on this team, do not pick.
+    --     for _, player in pairs( players ) do
+    --         if ( IsPlayerInHeroSelectionControl( player ) ) then
+    --             heroes = {};
+    --             break;
+    --         end
+    --     end
     end
 
+    for _, player in pairs( players ) do
+        if ( #heroes  == 0 ) then
+            break;
+        end
+
+        SelectHero( player, heroes[1] );
+        table.remove( heroes, 1 );
+    end
 end
 
 function UpdateLaneAssignments()
@@ -31,9 +50,9 @@ function UpdateLaneAssignments()
     then
         --print( "Radiant lane assignments" );
         return {
-        [1] = LANE_MID,
+        [1] = LANE_TOP,
         [2] = LANE_TOP,
-        [3] = LANE_TOP,
+        [3] = LANE_MID,
         [4] = LANE_BOT,
         [5] = LANE_BOT,
         };
@@ -41,9 +60,9 @@ function UpdateLaneAssignments()
     then
         --print( "Dire lane assignments" );
         return {
-        [1] = LANE_MID,
+        [1] = LANE_BOT,
         [2] = LANE_BOT,
-        [3] = LANE_BOT,
+        [3] = LANE_MID,
         [4] = LANE_TOP,
         [5] = LANE_TOP,
         };

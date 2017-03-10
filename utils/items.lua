@@ -1,4 +1,4 @@
-function HasItem( hero, item )
+function GetItemByName( hero, item )
     local itemFound = false;
 
     -- Iterate over inventory slots.
@@ -94,10 +94,15 @@ function ChooseItemToDiscard()
 end
 
 function PoolTangos( teammate, amount )
-    local npcBot = GetBot();
-    local tango = GetItemByName("item_tango");
-    npcBot:Action_UseAbilityOnEntity( tango, teammate );
-    for i = 2, amount do
-        npcBot:ActionQueue_UseAbilityOnEntity( tango, teammate );
+    local bot = GetBot();
+    local tangoSlot = bot:FindItemSlot( 'item_tango' );
+    local tangoSlotType = bot:GetItemSlotType( tangoSlot );
+
+    if ( tangoSlotType  == ITEM_SLOT_TYPE_MAIN ) then
+        local tango = bot:GetItemInSlot( tangoSlot );
+        bot:Action_UseAbilityOnEntity( tango, teammate );
+        for i = 2, amount do
+            bot:ActionQueue_UseAbilityOnEntity( tango, teammate );
+        end
     end
 end
