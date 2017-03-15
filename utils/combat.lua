@@ -141,7 +141,7 @@ function AttackMove()
     local target = npcBot:GetTarget();
     local attackRange = npcBot:GetAttackRange();
 
-    if ( target ~= nil and target:IsAlive() ) then
+    if ( target ~= nil and target:IsAlive() and npcBot:GetCurrentActionType() ~= BOT_ACTION_TYPE_ATTACK ) then
         -- Expected movement --
         local expectedMovement = target:GetExtrapolatedLocation( 0.2 );
         -- Check if we can attack again --
