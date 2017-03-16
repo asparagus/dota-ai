@@ -5,12 +5,13 @@ MAX_RANGE = 1600;
 
 
 -- Compute the damage dealt by enemies over a given interval to a hero fighting at the given location
-function NearbyEnemyDamage( hero, location, interval )
+function NearbyEnemyDamage( hero, sourceHero, location, interval )
     local delta = GetUnitToLocationDistance( hero, location );
+
     -- Enemies that will be attacking the hero
-    local creeps = hero:GetNearbyCreeps( CREEP_AGGRO_RANGE + delta, true );
-    local heroes = hero:GetNearbyHeroes( HERO_AGGRO_RANGE + delta, true, BOT_MODE_NONE );
-    local towers = hero:GetNearbyTowers( TOWER_AGGRO_RANGE + delta, true );
+    local creeps = sourceHero:GetNearbyCreeps( min( CREEP_AGGRO_RANGE + delta, MAX_RANGE ), hero:GetTeam() == sourceHero:GetTeam() );
+    local heroes = sourceHero:GetNearbyHeroes( min( HERO_AGGRO_RANGE + delta, MAX_RANGE ), hero:GetTeam() == sourceHero:GetTeam(), BOT_MODE_NONE );
+    local towers = sourceHero:GetNearbyTowers( min( TOWER_AGGRO_RANGE + delta, MAX_RANGE ), hero:GetTeam() == sourceHero:GetTeam() );
 
     -- Sum the damage for all sources
     local totalDamage = 0;
@@ -44,9 +45,9 @@ function EvaluateTrade( enemy )
     local location = enemy:GetLocation();
 
     local fightLength = 3; -- Pretend an engagement will last 3 seconds -
-    local totalEnemyDamage = NearbyEnemyDamage( npcBot, location, fightLength );
+    local totalEnemyDamage = NearbyEnemyDamage( npcBot, enemy, location, fightLength );
     local totalAlliedDamage = (
-        NearbyEnemyDamage( enemy, location, fightLength ) +
+        NearbyEnemyDamage( enemy, enemy, location, fightLength ) +
         npcBot:GetEstimatedDamageToTarget( true, enemy, fightLength, DAMAGE_TYPE_ALL ));
 
     -- The trade is advantageous if the % damage dealt is greater than the received.

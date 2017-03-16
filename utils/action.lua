@@ -18,8 +18,8 @@ function Action:execute()
 end
 
 -- Approaching Lane
-MovingToLane = Action:new('Moving to lane')
-function MovingToLane:getDesire()
+MoveToLane = Action:new('Move to lane')
+function MoveToLane:getDesire()
     local bot = GetBot()
     local team = GetTeam()
     local assignedLane = bot:GetAssignedLane()
@@ -31,7 +31,7 @@ function MovingToLane:getDesire()
         return BOT_ACTION_DESIRE_NONE
     end
 end
-function MovingToLane:execute()
+function MoveToLane:execute()
     local bot = GetBot()
     local team = bot:GetTeam()
     local assignedLane = bot:GetAssignedLane()
@@ -58,7 +58,6 @@ function LastHit:getDesire()
         local creepHealth = ExtrapolateHealth( creep, attackPoint )
         -- Check if creep can be last hitted --
         if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
-            print("Can last hit creep at " .. creepHealth)
             return BOT_ACTION_DESIRE_HIGH, creep
         end
     end
@@ -67,7 +66,6 @@ function LastHit:getDesire()
         local creepHealth = ExtrapolateHealth( creep, attackPoint )
         -- Check if creep can be denied --
         if ( creep:GetActualIncomingDamage( nDamage, eDamageType ) >= creepHealth ) then
-            print("Can last hit creep at " .. creepHealth)
             return BOT_ACTION_DESIRE_HIGH, creep
         end
     end
